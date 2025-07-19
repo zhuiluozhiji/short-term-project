@@ -1,0 +1,41 @@
+"""
+✅ 第一阶段：完成 market/auction.py 中的 AF（分配函数）与 RF（收入函数）
+"""
+import numpy as np
+from models.learner import train_and_predict
+from utils.metrics import gain_function
+
+def allocation_function(X: np.ndarray, pn: float, bn: float, noise_std: float = 1.0) -> np.ndarray:
+    """
+    AF∗: 对应论文 Section 4.1 Example 4.1
+    若买家出价 bn < 当前价格 pn，添加噪声；否则返回原始特征 X
+    """
+    if bn >= pn:
+        return X.copy()
+    else:
+        noise = np.random.normal(0, noise_std, size=X.shape)
+        return X + (pn - bn) * noise
+
+
+def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
+                     model_func=train_and_predict, gain_func=gain_function, steps: int = 20) -> float:
+    """
+    RF∗: 对应论文 Section 4.1, 式 (3)
+    Myerson payment function: 真实收益 - 折现积分
+    """
+    # 第一项：买家实际获得的收益
+    X_alloc = allocation_function(X, pn, bn)
+    Y_hat = model_func(X_alloc, Y)
+    G_bn = gain_func(Y, Y_hat)
+
+    # 第二项：积分 ∫₀^bn G(z) dz，数值近似为 Riemann sum
+    zs = np.linspace(0, bn, steps)
+    integral = 0
+    for z in zs:
+        X_z = allocation_function(X, pn, z)
+        Y_z_hat = model_func(X_z, Y)
+        G_z = gain_func(Y, Y_z_hat)
+        integral += G_z * (bn / steps)
+
+    # 返回支付
+    return bn * G_bn - integral
