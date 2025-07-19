@@ -44,7 +44,7 @@ def run_single_buyer(buyer, price=FIXED_PRICE):
 
 def main():
     # 加载 buyer 数据（支持多个）
-    buyers = load_buyer_data("data/buyer_data.json")
+    buyers = load_buyer_data("data/buyer.json")
 
     # 仅测试第一个买家（单人流程）
     if buyers:
