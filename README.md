@@ -1,7 +1,6 @@
 # short-term-project
 short-term-project: market
 
-朱致远是孟祥烨他爹awa
 
 ---
 
