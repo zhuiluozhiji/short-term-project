@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 def load_buyer_data(path):
-    with open(path, 'r') as f:
+    with open(path, 'r' , encoding = 'utf-8') as f:
         data = json.load(f)
     
     # 过滤掉 schema 说明
