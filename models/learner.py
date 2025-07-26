@@ -15,6 +15,8 @@ def train_and_predict(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
     """
     model = LinearRegression() # 创建模型实例
     model.fit(X, Y)  # 训练模型，学习 X 和 Y 的关系
+    # print(f"(debug) 模型系数: {model.coef_}")
+    # print(f"(debug) 模型截距: {model.intercept_}")
     return model.predict(X)  # 使用学到的关系预测 Y
     """
     什么是 LinearRegression？

@@ -35,8 +35,10 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
     print(f"刚调用完train_and_predict")
     gain = gain_function(Y, Y_hat)
     print(f"刚调用完gain_function")
-    revenue = revenue_function(X, Y, p_n, b)
-    print(f"刚调用完revenue_function")
+
+    print(f"✅ 预测增益 G = {gain:.4f}")
+    revenue = revenue_function(X, Y, p_n, b) # 就是在这里调用了无数次(debug) 模型系数: [4.97409326 0.05181347](debug) 模型截距: 0.49222797927461204！！！
+    # print(f"刚调用完revenue_function")
     
     if price_updater is not None:
         price_updater.update_weights(p_n, b, Y, X, revenue_function)
@@ -45,8 +47,9 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
     print(f"💰 买家需支付 Revenue = {revenue:.4f}")
     print(f"💡 净效用（G*b - revenue） = {gain * b - revenue:.4f}")
     print("-" * 60)
-
+    
     return p_n, revenue, X_tilde
+
 
 def main():
     buyers = load_buyer_data("data/buyer.json")
@@ -61,8 +64,9 @@ def main():
 
     for buyer in buyers:
         p_n, revenue, X_tilde = run_single_buyer(buyer, price_updater)
-        prices.append(p_n)
 
+        prices.append(p_n)
+           
         used_features = list(np.where(X_tilde.std(axis=0) != 0)[0])
         if not used_features:
             continue
@@ -73,7 +77,8 @@ def main():
         for local_idx, weight in shapley_weights.items():
             global_idx = used_features[local_idx]
             seller_revenue[global_idx] += revenue * weight
-
+        
+    
     print("\n📊 市场价格动态:")
     for i, p in enumerate(prices):
         print(f"买家 {i+1}: p = {p:.2f}")
@@ -81,6 +86,6 @@ def main():
     print("\n🏦 卖家总收益分配（基于边际贡献）:")
     for seller_id, rev in seller_revenue.items():
         print(f"特征 {seller_id}: 收益 = {rev:.4f}")
-
+    
 if __name__ == "__main__":
     main()
