@@ -1,3 +1,4 @@
+1. update_weights
 ```py
     def update_weights(self, chosen_price: float, b_n: float, Y: np.ndarray, 
                        X: np.ndarray, revenue_func) -> None:
@@ -17,3 +18,5 @@
 
 ```
 最好将已经算出来的revenue作为参数传入update函数, 同时也能优化性能
+
+2. revenue过于小 考虑适当增大noise来削减积分项里的G
