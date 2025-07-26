@@ -83,7 +83,7 @@ def main():
 
         for local_idx, weight in shapley_weights.items():
             global_idx = used_features[local_idx]
-            seller_revenue[global_idx] += revenue * weight
+            seller_revenue[global_idx] += weight
         
     
     print("\n📊 市场价格动态:")
