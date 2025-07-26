@@ -30,13 +30,16 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
     Y_hat = train_and_predict(X_tilde, Y)
     gain = gain_function(Y, Y_hat)
     revenue = revenue_function(X, Y, p_n, b)
+    
 
     if price_updater is not None:
         price_updater.update_weights(p_n, b, Y, X, revenue_function)
 
+    print(f"未添加噪声X = {X}")
+    print(f"添加噪声X_tilde = {X_tilde}")
     print(f"✅ 预测增益 G = {gain:.4f}")
-    print(f"💰 买家需支付 Revenue = {revenue:.4f}")
-    print(f"💡 净效用（G*b - revenue） = {gain * b - revenue:.4f}")
+    print(f"💰 买家需支付 Revenue = bn * G_bn - integral = {revenue:.4f}")
+    # print(f"💡 净效用（G*b - revenue） = {gain * b - revenue:.4f}")
     print("-" * 60)
 
     return p_n, revenue, X_tilde
@@ -58,13 +61,21 @@ def main():
 
         used_features = list(np.where(X_tilde.std(axis=0) != 0)[0])
         if not used_features:
+            print("⚠️ 所有特征被完全降质，跳过当前买家。")
             continue
 
-        sub_market = DataMarketplace(num_sellers=len(used_features))
-        shapley_weights = sub_market.allocate_revenue(method='approximate', K=100)
+        # sub_market = DataMarketplace(num_sellers=len(used_features))
+        sub_market = DataMarketplace(
+            num_sellers=len(used_features),
+            X=X_tilde[:, used_features],  # 提取未被完全降质的特征
+            Y=buyer["Y"],                 # 使用当前买家的目标值
+            pn=p_n,
+            bn= buyer["mu"],
+        )
+        shapley_weights = sub_market.allocate_revenue(method='approximate', K=1)
 
         for local_idx, weight in shapley_weights.items():
-            global_idx = used_features[local_idx]
+            global_idx = used_features[local_idx] # local_idx 是 used_features 中的索引，表示当前交易中实际使用的特征。
             seller_revenue[global_idx] += revenue * weight
 
     print("\n📊 市场价格动态:")

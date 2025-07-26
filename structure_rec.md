@@ -20,6 +20,7 @@ data-marketplace/
 │
 ├── utils/                   # 公共函数
 │   └── metrics.py
+│   └── io.py
 │
 └── main.py                  # 主程序入口：输入一个买家 → 运行三步流程
 ```

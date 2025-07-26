@@ -23,10 +23,18 @@ def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float,
     RF∗: 对应论文 Section 4.1, 式 (3)
     Myerson payment function: 真实收益 - 折现积分
     """
+
+    # 检查 X 是否为空集合
+    if X.shape[1] == 0:
+        # print("⚠️ X 为空集合，返回零收益")
+        return 0.0
+
     # 第一项：买家实际获得的收益
     X_alloc = allocation_function(X, pn, bn)
     Y_hat = model_func(X_alloc, Y)
     G_bn = gain_func(Y, Y_hat)
+
+    
 
     # 第二项：积分 ∫₀^bn G(z) dz，数值近似为 Riemann sum
     zs = np.linspace(0, bn, steps)
@@ -37,5 +45,6 @@ def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float,
         G_z = gain_func(Y, Y_z_hat)
         integral += G_z * (bn / steps)
 
+    # print(f"(debug)RF: bn * G_bn = {bn * G_bn}, Integral = {integral}")
     # 返回支付
     return bn * G_bn - integral
