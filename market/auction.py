@@ -94,7 +94,8 @@ def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float,
             X_z = allocation_function(X, pn, z)
             Y_z_hat = model_func(X_z, Y)
             G_z = gain_func(Y, Y_z_hat)
-            if G_z < G_bn:
+            
+            if G_z > G_bn:
                 continue
             if G_z > 0:
                 break

@@ -16,4 +16,4 @@
         price_updater.update_weights(p_n, b, Y, X, revenue_function_debug)
 
 ```
-最好将已经算出来的revenue作为参数传入update函数
+最好将已经算出来的revenue作为参数传入update函数, 同时也能优化性能
