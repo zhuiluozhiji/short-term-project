@@ -3,83 +3,86 @@
 import numpy as np
 import random
 from typing import List, Dict
+
+from market.auction import allocation_function
 from models.learner import train_and_predict
 from utils.metrics import gain_function
-from market.auction import revenue_function
-from market.auction import allocation_function
 
 class DataMarketplace:
-    def __init__(self, num_sellers: int, X: np.ndarray, Y: np.ndarray,  pn: float, bn: float, similarity_matrix: np.ndarray = None, lambda_penalty: float = 0.1):
-        self.M = num_sellers
-        self.similarity_matrix = similarity_matrix if similarity_matrix is not None else np.eye(num_sellers)
-        self.lambda_penalty = lambda_penalty
-        # 以下是新加入的来自auction中必要的成员变量，避免函数参数冗余调用
+    def __init__(self, X: np.ndarray, Y: np.ndarray, lambda_penalty: float = 0.1):
+        """
+        X: (样本数, 特征数) numpy array
+        Y: (样本数, 标签维度) numpy array
+        """
         self.X = X
         self.Y = Y
-        self.pn = pn
-        self.bn = bn
-    '''
-    def revenue_function(self, subset: List[int]) -> float:
-        # 示例：收益与特征子集大小成正比
-        print(f"调用revenue.py中的同名函数")
-        return len(subset) * 10.0
-    '''
+        self.M = X.shape[1]  # 特征数量
+        self.lambda_penalty = lambda_penalty
 
-    '''
-    def marginal_gain(self, subset: List[int], feature: int) -> float:
-        return self.revenue_function(subset + [feature]) - self.revenue_function(subset)
-    '''
-
-    def marginal_gain(self, subset: List[int], feature: int) -> float:
+    def revenue_function(self, subset: List[int], pn: float, bn: float) -> float:
         """
-        计算特征的边际增益。
-        使用 auction.py 中的 revenue_function 和 allocation_function。
+        计算给定特征子集 subset 在价格 pn 和买家出价 bn 下的收益（支付）
         """
-        # 构造包含新特征的子集
-        subset_with_feature = subset + [feature]
+        if len(subset) == 0:
+            return 0.0
 
-        # 计算包含新特征的子集的收益
-        revenue_with_feature = revenue_function(
-            self.X[:, subset_with_feature],  # 提取子集对应的特征列
-            self.Y,
-            self.pn,
-            self.bn,
-            model_func=train_and_predict,
-            gain_func=gain_function
-        )
+        X_subset = self.X[:, subset]
+        Y = self.Y
 
-        # 计算不包含新特征的子集的收益
-        revenue_without_feature = revenue_function(
-            self.X[:, subset],  # 提取子集对应的特征列
-            self.Y,
-            self.pn,
-            self.bn,
-            model_func=train_and_predict,
-            gain_func=gain_function
-        )
+        # 买家实际获得的收益增益 G(bn)
+        X_alloc = allocation_function(X_subset, pn, bn)
+        Y_hat = train_and_predict(X_alloc, Y)
+        G_bn = gain_function(Y, Y_hat)
 
-        # 返回边际增益
-        return revenue_with_feature - revenue_without_feature
+        # 数值积分 ∫0^bn G(z) dz
+        steps = 100
+        zs = np.linspace(0, bn, steps)
+        integral = 0.0
+        for z in zs:
+            X_z = allocation_function(X_subset, pn, z)
+            Y_z_hat = train_and_predict(X_z, Y)
+            G_z = gain_function(Y, Y_z_hat)
+            integral += G_z * (bn / steps)
 
-       
-        
-    def approximate_shapley(self, K: int = 1000) -> Dict[int, float]:
+        payment = bn * G_bn - integral
+        payment = max(payment, 0.0)
+        return payment
+
+    def marginal_gain(self, subset: List[int], feature: int, pn: float, bn: float) -> float:
+        return self.revenue_function(subset + [feature], pn, bn) - self.revenue_function(subset, pn, bn)
+
+    def approximate_shapley(self, pn: float, bn: float, K: int = 1000) -> Dict[int, float]:
         shapley_values = {m: 0.0 for m in range(self.M)}
         for _ in range(K):
             permutation = random.sample(range(self.M), self.M)
             for i, m in enumerate(permutation):
                 T = permutation[:i]
-                gain = self.marginal_gain(T, m)
+                gain = self.marginal_gain(T, m, pn, bn)
                 shapley_values[m] += gain
+        # 平均
         shapley_values = {m: v / K for m, v in shapley_values.items()}
         return shapley_values
 
-    def allocate_revenue(self, method: str = 'approximate', K: int = 1000) -> Dict[int, float]:
+    def allocate_revenue(self, pn: float, bn: float, method: str = 'approximate', K: int = 1000,
+                         total_revenue: float = 1.0, enforce_non_negative=True) -> Dict[int, float]:
         if method == 'approximate':
-            shapley_values = self.approximate_shapley(K)
+            shapley_values = self.approximate_shapley(pn, bn, K)
         else:
-            raise ValueError("Only approximate Shapley supported in this demo")
-        total = sum(shapley_values.values())
-        if total <= 0:
-            return {m: 0.0 for m in range(self.M)}
-        return {m: v / total for m, v in shapley_values.items()}
+            raise ValueError("Only approximate Shapley supported")
+
+        # 引入简单相似度惩罚（如果需要，可改成传入相似度矩阵）
+        payouts = {}
+        for i in range(self.M):
+            penalty = self.lambda_penalty * 0  # 这里示例无相似度矩阵，故为0
+            payouts[i] = shapley_values[i] - penalty
+
+        if enforce_non_negative:
+            payouts = {i: max(v, 0.0) for i, v in payouts.items()}
+
+        total = sum(payouts.values())
+        if total < 1e-8:
+            return {i: 0.0 for i in range(self.M)}
+
+        # 归一化乘以总收益
+        normalized_payouts = {i: (v / total) * total_revenue for i, v in payouts.items()}
+        return normalized_payouts
