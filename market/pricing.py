@@ -40,6 +40,6 @@ class MWUPriceUpdater:
                        X: np.ndarray, revenue_func) -> None:
         """更新权重（基于收益反馈）"""
         for i, c_i in enumerate(self.candidates):
-            RF_i = revenue_func(X, Y, c_i, b_n)
+            RF_i, _,_,_,_ = revenue_func(X, Y, c_i, b_n)
             g_i = RF_i / self.B_max  # 归一化收益增益
             self.weights[i] *= (1 + self.delta * g_i)

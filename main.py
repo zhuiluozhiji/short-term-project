@@ -4,7 +4,7 @@ import numpy as np
 from typing import Optional
 
 from utils.io import load_buyer_data
-from market.auction import allocation_function, revenue_function, revenue_function_debug
+from market.auction import allocation_function, revenue_function, revenue_function_origin
 from models.learner import train_and_predict
 from market.revenue import DataMarketplace
 
@@ -25,7 +25,7 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
     print(f"   - 真实估值 mu = {mu:.2f}")
     print(f"   - 出价 b = {b:.2f}")
     print(f"   - 当前市场定价 p = {p_n:.2f}")
-    revenue, X_tilde, Y_hat, gain, integral = revenue_function_debug(X, Y, p_n, b)
+    revenue, X_tilde, Y_hat, gain, integral = revenue_function(X, Y, p_n, b)
     # X_tilde = allocation_function(X, p_n, b)
     # Y_hat = train_and_predict(X_tilde, Y)
     print(f"   - 分配前的特征 X: {X}")

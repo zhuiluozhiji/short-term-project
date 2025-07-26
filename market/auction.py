@@ -32,7 +32,7 @@ def allocation_function(X: np.ndarray, pn: float, bn: float, noise_std: float = 
         return X_tilde
 
 
-def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
+def revenue_function_origin(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
                      model_func=train_and_predict, gain_func=gain_function, steps: int = 100) -> float:
     """
     Myerson 风格支付函数（论文 Section 4.1，式 (3)）
@@ -69,7 +69,7 @@ def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float,
 
 
 
-def revenue_function_debug(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
+def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
                      model_func=train_and_predict, gain_func=gain_function, steps: int = 100) -> float:
     """
     Myerson 风格支付函数（论文 Section 4.1，式 (3)）
