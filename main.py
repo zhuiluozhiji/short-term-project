@@ -28,9 +28,16 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
 
     X_tilde = allocation_function(X, p_n, b)
     Y_hat = train_and_predict(X_tilde, Y)
+    print(f"   - 分配前的特征 X: {X}")
+    print(f"   - 分配后的特征 X_tilde: {X_tilde}")
+    print(f"   - 真实值 Y: {Y}")
+    print(f"   - 预测值 Y_hat: {Y_hat}")
+    print(f"刚调用完train_and_predict")
     gain = gain_function(Y, Y_hat)
+    print(f"刚调用完gain_function")
     revenue = revenue_function(X, Y, p_n, b)
-
+    print(f"刚调用完revenue_function")
+    
     if price_updater is not None:
         price_updater.update_weights(p_n, b, Y, X, revenue_function)
 

@@ -18,24 +18,31 @@ def allocation_function(X: np.ndarray, pn: float, bn: float, noise_std: float = 
 
 
 def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
-                     model_func=train_and_predict, gain_func=gain_function, steps: int = 20) -> float:
+                     model_func=train_and_predict, gain_func=gain_function, steps: int = 100) -> float:
     """
-    RF∗: 对应论文 Section 4.1, 式 (3)
-    Myerson payment function: 真实收益 - 折现积分
+    Myerson 风格支付函数（论文 Section 4.1，式 (3)）
+    收益 = 边际增益 × 出价 - 累积边际增益积分
     """
-    # 第一项：买家实际获得的收益
+    # 第一项：买家实际的预测增益
     X_alloc = allocation_function(X, pn, bn)
     Y_hat = model_func(X_alloc, Y)
     G_bn = gain_func(Y, Y_hat)
 
-    # 第二项：积分 ∫₀^bn G(z) dz，数值近似为 Riemann sum
+    # 第二项：近似积分 ∫₀^bn G(z) dz，使用 Trapezoidal rule
     zs = np.linspace(0, bn, steps)
-    integral = 0
+    dz = bn / (steps - 1)
+    integral = 0.0
+
+    prev_G = None
     for z in zs:
         X_z = allocation_function(X, pn, z)
         Y_z_hat = model_func(X_z, Y)
         G_z = gain_func(Y, Y_z_hat)
-        integral += G_z * (bn / steps)
 
-    # 返回支付
+        if prev_G is not None:
+            integral += 0.5 * (G_z + prev_G) * dz  # 梯形面积
+        prev_G = G_z
+
+    # print(f"[调试] 出价 bn: {bn:.2f}, G(bn): {G_bn:.4f}, ∫G(z)dz ≈ {integral:.4f}")
+
     return bn * G_bn - integral
