@@ -4,7 +4,7 @@ import numpy as np
 from typing import Optional
 
 from utils.io import load_buyer_data
-from market.auction import allocation_function, revenue_function
+from market.auction import allocation_function, revenue_function, revenue_function_debug
 from models.learner import train_and_predict
 from market.revenue import DataMarketplace
 
@@ -25,27 +25,24 @@ def run_single_buyer(buyer, price_updater: Optional[MWUPriceUpdater] = None):
     print(f"   - 真实估值 mu = {mu:.2f}")
     print(f"   - 出价 b = {b:.2f}")
     print(f"   - 当前市场定价 p = {p_n:.2f}")
-
-    X_tilde = allocation_function(X, p_n, b)
-    Y_hat = train_and_predict(X_tilde, Y)
+    revenue, X_tilde, Y_hat, gain, integral = revenue_function_debug(X, Y, p_n, b)
+    # X_tilde = allocation_function(X, p_n, b)
+    # Y_hat = train_and_predict(X_tilde, Y)
     print(f"   - 分配前的特征 X: {X}")
     print(f"   - 分配后的特征 X_tilde: {X_tilde}")
     print(f"   - 真实值 Y: {Y}")
     print(f"   - 预测值 Y_hat: {Y_hat}")
-    print(f"刚调用完train_and_predict")
-    gain = gain_function(Y, Y_hat)
-    print(f"刚调用完gain_function")
+    # print(f"刚调用完train_and_predict")
+    # print(f"刚调用完gain_function")
 
     print(f"✅ 预测增益 G = {gain:.4f}")
-    revenue = revenue_function(X, Y, p_n, b) # 就是在这里调用了无数次(debug) 模型系数: [4.97409326 0.05181347](debug) 模型截距: 0.49222797927461204！！！
-    # print(f"刚调用完revenue_function")
+
     
     if price_updater is not None:
         price_updater.update_weights(p_n, b, Y, X, revenue_function)
 
-    print(f"✅ 预测增益 G = {gain:.4f}")
     print(f"💰 买家需支付 Revenue = {revenue:.4f}")
-    print(f"💡 净效用（G*b - revenue） = {gain * b - revenue:.4f}")
+    # print(f"💡 净效用（G*b - revenue） = {gain * b - revenue:.4f}")
     print("-" * 60)
     
     return p_n, revenue, X_tilde
