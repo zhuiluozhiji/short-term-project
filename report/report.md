@@ -180,6 +180,310 @@ seller_revenue[1] += 19.5
 
 ## 三、关键定理的描述
 
+### Truthfulness
+在该论文的模型中，需要满足诚实性，即每个买家的最优报价策略为其估值，可以表示为
+
+<center>
+
+$$ \mu_n = \arg\max_{z \in \mathbb{R}_+} \mathcal{U}(z, Y_n)$$
+
+</center>
+
+满足这个性质的前提是函数$\mathcal{AF}$的单调性：即对于任意$b^{(1)}<b^{(2)}$，成立
+<center>
+
+$\mathcal{G}(Y_n,\mathcal{M}( \widetilde{X}_M^{(1)})) \leq \mathcal{G}(Y_n, \mathcal{M}( \widetilde{X}_M^{(2)})) $
+
+</center>
+
+#### 证明
+
+
+对单调性假设进行化简，将噪声后的特征向量展开：
+
+<center>
+
+$$\mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(b_1, p_n))) \leq \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(b_2, p_n)))$$
+
+</center>
+
+
+展开函数 \(\mathcal{U}(z, Y_n)\)
+\[
+\mathcal{U}(z, Y_n) = \mu_n \cdot \mathcal{G}(Y_n, \hat{Y}_n) - \mathcal{RF}^*(p_n, z, Y_n)
+\]
+
+同时已知
+
+\[
+\mathcal{RF}^*(p_n, b_n, Y_n) = b_n \cdot \mathcal{G}(Y_n, \hat{Y}_n) - \int_0^{b_n} \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(z, p_n))) \, dz.
+\]
+
+代入上式
+
+\[
+\mathcal{U}(z, Y_n) = \mu_n \cdot \mathcal{G}(Y_n, \hat{Y}_n) - \left[ z \cdot \mathcal{G}(Y_n, \hat{Y}_n) - \int_0^z \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(t, p_n))) \, dt \right].
+\]
+
+\[
+\mathcal{U}(z, Y_n) = (\mu_n - z) \cdot \mathcal{G}(Y_n, \hat{Y}_n) + \int_0^z \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(t, p_n))) \, dt.
+\]
+
+接下来我们求z在什么时候能够使函数为最大值。
+因此对 \(\mathcal{U}(z, Y_n)\)求导：
+
+\[
+\frac{d}{dz} \mathcal{U}(z, Y_n) = -\mathcal{G}(Y_n, \hat{Y}_n) + \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(z, p_n))) + (\mu_n - z) \cdot \frac{d}{dz} \mathcal{G}(Y_n, \hat{Y}_n).
+\]
+由定义知， \(\mathcal{G}(Y_n, \hat{Y}_n) = \mathcal{G}(Y_n, \mathcal{M}(\mathcal{AF}^*(z, p_n)))\)，因此上式只需要保留最后一项：
+\[
+\frac{d}{dz} \mathcal{U}(z, Y_n) = (\mu_n - z) \cdot \frac{d}{dz} \mathcal{G}(Y_n, \hat{Y}_n).
+\]
+
+而由单调性假设，我们可以知道 $\mathcal{G}(Y_n, \hat{Y}_n)$单调，因此可以判断
+\[
+\frac{d}{dz} \mathcal{G}(Y_n, \hat{Y}_n) \geq 0.
+\]
+
+因此当$\mu_n = z$时，$\mathcal{U}(z,Y_n)$取最大值
+
+### Revenue Maximization
+在论文的3.2中给出了收益最大化的定义：
+
+\[
+\lim_{N \to \infty} \frac{1}{N} \left[ \sup_{\{(b_n, Y_n)\}} \left( \sup_{p^* \in \mathbb{R}_+} \sum_{n=1}^N \mathcal{RF}(p^*, b_n, Y_n) - \sum_{n=1}^N \mathcal{RF}(p_n, b_n, Y_n) \right) \right] = 0
+\]
+
+即当N趋近于无穷时，事后最佳价格与设置价格的平均差值趋近于0，此时收益最大。而在满足5.1中的假设1、3、4的前提下可以实现该条件。
+
+**假设1**：对于任意$b^{(1)}<b^{(2)}$，成立
+<center>
+
+$\mathcal{G}(Y_n,\mathcal{M}( \widetilde{X}_M^{(1)})) \leq \mathcal{G}(Y_n, \mathcal{M}( \widetilde{X}_M^{(2)})) $
+
+</center>
+
+**假设3**：收益函数$\mathcal{RF}$满足$lipschitz$ 对于任意的 \(Y_n,b_n,  p^{(1)}, p^{(2)} \):
+  \[
+  |\mathcal{RF}^*(p^{(1)}, b_n, Y_n) - \mathcal{RF}^*(p^{(2)}, b_n, Y_n)| \leq \mathcal{L}|p^{(1)} - p^{(2)}|.
+  \]
+
+**假设4**：报价$b_n$全部在一个封闭有界区间$B$
+
+#### 证明
+已知算法1的权重更新为\(w_{n+1}^i = w_n^i (1 + \delta g_n^i)\) ，通过改变权重来调整市场价格的出现概率。
+而总的市场权重可以化简为
+\[
+W_{n+1} = \sum_{i} w_{n+1}^i = \sum_{i} w_n^i (1 + \delta g_n^i) = W_n + \delta \sum_{i} w_n^i g_n^i = W_n (1 + \delta g_n^{\text{alg}})
+\]  
+
+同时我们又可以知道第一轮的权重为\(W_1 = |\mathcal{B}_{\text{net}}(\epsilon)|\)
+因此我们可以得到递推式：
+ \[
+W_{N+1} = W_1 \prod_{n=1}^N (1 + \delta g_n^{\text{alg}}) = |\mathcal{B}_{\text{net}}(\epsilon)| \cdot \prod_{n=1}^N (1 + \delta g_n^{\text{alg}})
+\]  
+
+取对数，进行放缩可得：
+
+\[
+\log W_{N+1} = \log |\mathcal{B}_{\text{net}}(\epsilon)| + \sum_{n=1}^N log(1+ \delta g_n^{\text{alg}}) \leq \log |\mathcal{B}_{\text{net}}(\epsilon)| + \delta \sum_{n=1}^N g_n^{\text{alg}} \quad 
+\]
+
+又由$W_{N+1}$的定义知，
+\[
+\log W_{N+1} \geq \log w_{N+1}^i = \sum_{n=1}^N \log(1 + \delta g_n^i) 
+\]
+
+再次进行放缩可得：
+
+\[
+\log W_{N+1} \geq  \delta \sum_{n=1}^N g_n^i - \delta^2 N
+\] 
+
+结合前式，可以得到关于$g_n^i$、$g_n^{alg}$的不等式
+\[
+\delta \sum_{n=1}^N g_n^{\text{alg}} \geq \delta \sum_{n=1}^N g_n^i - \log |\mathcal{B}_{\text{net}}(\epsilon)| - \delta^2 N
+\]  
+
+两边除以 \(\delta N\) 并设 \(\delta = \sqrt{\log |\mathcal{B}_{\text{net}}(\epsilon)| / N}\)：  
+\[
+\frac{1}{N} \sum_{n=1}^N g_n^{\text{alg}} \geq \frac{1}{N} \sum_{n=1}^N g_n^i - 2 \sqrt{\frac{\log |\mathcal{B}_{\text{net}}(\epsilon)|}{N}} \quad (2)
+\]
+
+
+
+由假设3和$\mathcal{B_{net}}$的定义我们可以知道，归一化收益满足：
+\[
+|g_n^{\text{opt}} - g_n^i| \leq \mathcal{L} \epsilon / \mathcal{B}_{\max}
+\]  
+
+因此可以代入上式
+
+\[
+\frac{1}{N} \sum_{n=1}^N g_n^{\text{alg}} \geq \frac{1}{N} \sum_{n=1}^N g_n^{\text{opt}} - 2 \sqrt{\frac{\log |\mathcal{B}_{\text{net}}(\epsilon)|}{N}} - \frac{\mathcal{L} \epsilon}{\mathcal{B}_{\max}}
+\]  
+
+
+选择 \(\epsilon = \frac{1}{\mathcal{L} \sqrt{N}}\)，并利用 \(|\mathcal{B}_{\text{net}}(\epsilon)| \leq \frac{3\mathcal{B}_{\max}}{\epsilon}\)：  
+\[
+\frac{1}{N} \mathbb{E}[\mathcal{R}(N)] \leq 2 \mathcal{B}_{\max} \sqrt{\frac{\log (3 \mathcal{B}_{\max} \mathcal{L} \sqrt{N})}{N}} + \frac{\mathcal{B}_{\max}}{\sqrt{N}}
+\]  
+化简，得到最终结论：  
+\[
+\frac{1}{N} \mathbb{E}[\mathcal{R}(N)] \leq C \mathcal{B}_{\max} \sqrt{\frac{\log (\mathcal{B}_{\max} \mathcal{L} \sqrt{N})}{N}}
+\]
+
+### Fairness
+#### Shapely Fairness
+property3.3定义了模型中的公平性，通过对$\mathcal{PD}$进行约束来保证卖家间的公平分配：
+
+1. **balance**：\(\sum_{m=1}^M \psi_n(m) = 1\)  
+2. **Symmetry**：∀ \( m, m' \in [M] \), ∀ \( S \subset [M] \setminus \{m, m'\} \), if \( \mathcal{PD}(S \cup m, Y_n) = \mathcal{PD}(S \cup m', Y_n) \), then \( \psi_n(m) = \psi_n(m') \).  
+3. **Zero Element**：∀ \( m \in [M] \), ∀ \( S \subset [M] \), if \( \mathcal{PD}(S \cup m, Y_n) = \mathcal{PD}(S, Y_n) \), then \( \psi_n(m) = 0 \). 
+4. **Additivity**： 支付分配函数 \( \mathcal{PD}([M], Y_n^{(1)}), \mathcal{PD}([M], Y_n^{(2)}) \) 的输出分别为$\psi_n^{(1)}、 \psi_n^{(2)} $, 令 \( \psi_n' \) 为\( \mathcal{PD}([M], Y_n^{(1)} + Y_n^{(2)}) \)的输出，那么\( \psi_n' = \psi_n^{(1)} + \psi_n^{(2)} \)。
+
+由于shapely值的计算需要$O(2^M)$的时间复杂度，因此实际算法2中采用了随机随机采样方法将复杂度降至$O(M^2)$，在定理5.3中，证明了算法2的输出至少有$1-\delta$的概率满足$\|\psi_{n,\text{shapley}} - \hat{\psi}_n\|_\infty < \epsilon$
+
+#### Robustness to Replication
+而由于现实中数据是可以零成本复制的，因此常规的shapely值会导致复制者获得更多的收益，因此需要分配机制对复制行为由鲁棒性，因此提出了property3.4来保障鲁棒性。
+
+property3.4：对于所有特征 $m \in [M]$，用 $m_i^+$ 表示 $m$ 的第 $i$ 个复制副本（即 $X_{m_i^+} = X_m$）。定义包含原始特征和复制特征的集合为：
+
+$$
+[M]^+ = \bigcup_m \left(m \cup_i m_i^+\right)
+$$
+
+令 $\psi_n^+ = \mathcal{PD}([M]^+, Y_n)$ 为对扩展特征集的支付分配函数输出。则称一个市场机制是 $\epsilon$-抗复制的，如果对于所有 $n \in [N]$ 和所有 $Y_n$，支付分配函数 $\mathcal{PD}$ 满足：
+
+$$
+\psi_n^+(m) + \sum_i \psi_n^+(m_i^+) \leq \psi_n(m) + \epsilon
+$$
+
+其中：
+- $\psi_n(m)$ 是原始市场（无复制）中对特征 $m$ 的分配值
+- $\psi_n^+(m)$ 和 $\psi_n^+(m_i^+)$ 分别是扩展市场中对原始特征及其复制副本的分配值
+- $\epsilon \geq 0$ 为允许的误差容限
+
+在定理5.4中，证明了在假设2的条件下，复制数据不会改变预测精度，算法3能有效抑制数据复制，确保分配公平。
+
+#### 5.3证明
+根据shapely值的定义，将其转化为
+\[
+    ψ_{n,shapley}(m) = E_{σ∼Unif(σ_{S_n})}[G_n(Y_n,M_n(X_{[σ<m]∪m})) - G_n(Y_n,M_n(X_{[σ<m]}))]
+\]
+
+而随机变量ψ̂_n^k(m)按以下方式分布：
+\[
+P(ψ̂_n^k(m) = G_n(Y_n,M(X_{[σ_k<m]∪m})) - G_n(Y_n,M(X_{[σ_k<m]})); σ ∈ σ_{S_n}) = 1/S_n!\]
+
+然后我们有：
+\[
+E[ψ̂_n(m)] = (1/K) Σ_{k=1}^K E[ψ̂_n^k(m)] = ψ_{n,shapley}\]
+
+由于$ψ̂_n(m)$的支持在0和1之间有界，且$ψ̂_n^k(m)$是独立同分布的，我们可以应用Hoeffding不等式得到以下界限：
+\[
+P(|ψ_{n,shapley} - ψ̂_n(m)| > ε) < 2 exp(-2ε²/K)
+\]
+通过对所有$m ∈ S_n ≤ M$应用联合界，我们有：
+\[
+P(‖ψ_{n,shapley} - ψ̂_n‖_∞ > ε) < 2M exp(-2ε²/K)\]
+
+设$δ = 2M exp(-2ε²/K)$并解出$K$:
+\[K > (M log(2/δ))/(2ε²)\]
+
+#### 5.4证明
+**假设2**:对于任意子集 \( S \subset [M] \)、任意预测任务 \( Y_n \) 以及任意特征 \( m \in S \)，若 \( m_i^+ \) 表示特征 \( m \) 的第 \( i \) 次复制（即 \( X_{m,i}^+ = X_m \)），且 \( S^+ = \cup_{m}(m \cup_i m_i^+) \) 表示原始特征及其复制特征的集合，则以下等式成立：  
+
+\[
+\mathcal{G}(Y_n, \mathcal{M}(X_S)) = \mathcal{G}(Y_n, \mathcal{M}(X_{S^+}))
+\]
+
+在假设2的前提下，进行证明。
+
+设$S = {X_1,X_2,...,X_K}$表示没有复制的原始分配特征集。设$S^+ ={X_{(1,1)},X_{(1,2)},...,X_{(1,c_1)},X_{(2,1)},...,X_{(K,c_K)}}$（其中$c_i ∈ N$）是附加了原始特征复制版本的S的扩展版本，即$X_{(m,i)}$是特征$X_m$的第$(i-1)$次复制副本。
+
+设$ψ̂,ψ̂^+$分别是$S,S^+$的算法3第1步的各自输出。卖家m在原始和复制场景中的总收入分配由以下给出：
+\[
+\begin{aligned}
+\psi(m) &= \hat{\psi}(m)\exp\left(-\lambda\sum_{j\in S\setminus m}\mathcal{SM}(X_m,X_j)\right) \\
+\psi^+(m) &= \sum_{i=1}^{c_m}\hat{\psi}^+((m,i))\exp\left(-\lambda\sum_{(j,k)\in S^+\setminus (m,i)}\mathcal{SM}(X_{(m,i)},X_{(j,k)})\right)
+\end{aligned}
+\]
+
+对于性质3.4成立，需要证明$ψ^+(m) ≤ ψ(m) + ε$。我们有：
+
+\[
+\sum_{i\in c_m} \hat{\psi}^+((m,i)) \exp\left(-\lambda \sum_{(j,k)\in S_m^+\setminus\{(m,i)\}} \mathcal{SM}(X_{(m,i)},X_{(j,k)})\right)
+\]
+
+
+\[
+\leq \sum_{i\in c_m} \hat{\psi}^+((m,i)) \exp\left(-\lambda \sum_{l\in [c_m]\setminus i} \mathcal{SM}(X_{(m,i)},X_{(m,l)})\right) \exp\left(-\lambda \sum_{l\in S_m\setminus\{m\}} \mathcal{SM}(X_{(m,i)},X_{(l,1)})\right)
+\]
+
+\[
+= \sum_{i\in c_m} \hat{\psi}^+((m,i)) \exp\left(-\lambda (c_m - 1)\right) \exp\left(-\lambda \sum_{l\in S_m\setminus\{m\}} \mathcal{SM}(X_m,X_l)\right)
+\]
+
+\[
+\leq c_m \left(\hat{\psi}^+((m,1)) + \frac{1}{3}\epsilon\right) \exp\left(-\lambda (c_m - 1)\right) \exp\left(-\lambda \sum_{j\in S\setminus\{m\}} \mathcal{SM}(X_m,X_j)\right)
+\]
+
+\[
+\leq c_m \left(\hat{\psi}^+((m,1)) + \frac{1}{3}\epsilon\right) \exp\left(-\lambda (c_m - 1)\right) \exp\left(-\lambda \sum_{j\in S\setminus\{m\}} \mathcal{SM}(X_m,X_j)\right)
+\]
+
+因此需要证明$c_m(ψ̂^+((m,1)) + (1/3)ε)exp(-λ(c_m - 1)) ≤ ψ(m) + ε ∀c_m ∈ N$。我们有：
+$$
+c_m \exp\left(-\lambda (c_m - 1)\right) \left(\hat{\psi}^+((m,1)) + \frac{1}{3}\epsilon\right)
+$$
+
+$$
+\leq c_m \exp\left(-\lambda (c_m - 1)\right) \left(\frac{\psi(m)}{c_m} + \frac{2}{3}\epsilon\right)
+$$
+
+$$
+\leq c_m \exp\left(-\lambda (c_m - 1)\right) \left(\psi(m) + \frac{2}{3}\epsilon\right)
+$$
+
+$$
+\leq c_m \exp\left(-\lambda (c_m - 1)\right) \left(\hat{\psi}(m) + \epsilon\right)
+$$
+
+$$
+\leq \left(\hat{\psi}(m) + \epsilon\right)
+$$
+
+其中通过选取$\lambda = \log(2)$使得$c_m \exp\left(-\lambda (c_m - 1)\right) \leq 1$ $\forall c_m \in \mathbb{N}$。
+
+$\psi_n$继续满足性质3.3的条件2-4以$\epsilon$精度的事实，直接来自定理5.3和$\psi_n$的构造。
+
+#### 命题5.1
+
+如果市场中卖家的身份是匿名的，则性质3.3的平衡条件和性质3.4不能同时成立。
+我们通过举反例来说明，预设三种场景。
+
+在第一种场景中，市场恰好有两个卖家$A,B$，每个都出售相同的特征，即$X_A = X_B$。根据性质3.3的条件1和2，两个卖家必须获得相同的分配，即$\psi_1(A) = \psi_1(B) = \frac{1}{2}$，对于任何预测任务。
+
+现在考虑第二种场景，市场还是相同的两个卖家$A$和$B$，但这次卖家$A$复制其特征一次并在市场上再次出售为$A'$。由于假设卖家的身份是匿名的，为满足性质3.3的"平衡"条件，我们需要$\psi_2(A) = \psi_2(B) = \psi_2(A') = \frac{1}{3}$。因此，卖家$A$的总分配为$\psi_2(A) + \psi_2(A') = \frac{2}{3} > \frac{1}{2} = \psi_1(A)$，即性质3.4不成立。
+
+最后考虑第三种场景，市场包含三个卖家$A,B$和$C$，每个都出售相同的特征，即$X_A = X_B = X_C$。很容易看出，为达到"平衡"，我们需要$\psi_3(A) = \psi_3(B) = \psi_3(C) = \frac{1}{3}$。
+
+由于市场无法区分$A'$和$C$，我们要么有平衡性，要么有性质3.4即"抗复制鲁棒性"。
+
+### Efficiency
+property3.5定义了高效性：对于每个步骤都能以多项式时间内运行，且计算复杂度不能随着N增长。
+该性质表明了当前算法的可应用性，而在5.5中验证了算法的高效性。
+
+
+  | **算法**               | **时间复杂度** | **说明**                          |  
+  |------------------------|----------------|-----------------------------------|  
+  | \(\mathcal{AF}^*\)      | \(O(M)\)       | 分配函数（如添加噪声）线性时间     |  
+  | \(\mathcal{RF}^*\)      | \(O(M)\)       | 收入函数（调用 \(\mathcal{G}, \mathcal{M}\) 常数次） |  
+  | \(\mathcal{PF}^*\)      | \(O(M)\)       | 价格更新（基于Multiplicative Weights） |  
+  | \(\mathcal{PD}_a^*\) (Algorithm 2) | \(O(M^2)\) | Shapley近似（随机采样 \(K \propto M\)) |  
+  | \(\mathcal{PD}_b^*\) (Algorithm 3) | \(O(M^2)\) | 鲁棒性分配（增加相似性惩罚）       |  
+
 
 ## 四、实现的核心算法介绍
 
