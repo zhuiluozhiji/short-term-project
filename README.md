@@ -1,7 +1,10 @@
 # short-term-project
 short-term-project: market
 
-
+运行前端代码：
+```
+streamlit run app.py
+```
 ---
 
 
