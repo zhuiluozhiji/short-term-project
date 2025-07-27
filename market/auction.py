@@ -70,7 +70,7 @@ def revenue_function_origin(X: np.ndarray, Y: np.ndarray, pn: float, bn: float,
 
 
 def revenue_function(X: np.ndarray, Y: np.ndarray, pn: float, bn: float, 
-                     model_func=train_and_predict, gain_func=gain_function, steps: int = 10) -> float:
+                     model_func=train_and_predict, gain_func=gain_function, steps: int = 20) -> float:
     """
     Myerson 风格支付函数（论文 Section 4.1，式 (3)）
     收益 = 边际增益 × 出价 - 累积边际增益积分
