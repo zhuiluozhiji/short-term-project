@@ -650,6 +650,103 @@ def gain_function(y_true, y_pred, task='regression'):
    * 对每种排列，计算某特征的“加入前后”预测增益
    * 多次采样后求平均，得到近似 Shapley 值
 
+#### 类结构概览：`DataMarketplace`
+
+```python
+class DataMarketplace:
+    def __init__(self, X: np.ndarray, Y: np.ndarray, lambda_penalty: float = 0.1):
+```
+
+* 这是整个数据市场模型的载体。
+* 参数含义：
+
+  * `X`：所有特征数据，维度为 `(n_samples, n_features)`，对应论文中的 `X_M`。
+  * `Y`：所有标签（预测目标），对应论文中的 `Y_n`。
+  * `lambda_penalty`：用于在 PD\*（Shapley-Robust）机制中惩罚特征冗余，初始化为0，尚未启用。
+
+> 对应论文第 2.1 节：“Feature set M”, “Label Y”, 构成训练数据的基础。
+
+---
+
+#### `marginal_gain()` —— 特征的边际增益
+
+```python
+def marginal_gain(self, subset, feature, pn, bn):
+```
+
+* **论文对应**：第 4.2 节，Shapley 值定义中的边际贡献计算：
+
+$$
+\Delta_f(S) = RF(S ∪ \{f\}) - RF(S)
+$$
+
+* 用于构造 Shapley 值的关键步骤，表示某一特征加入到子集中的收益提升。
+
+---
+
+#### `approximate_shapley()` —— Shapley 值近似算法
+
+```python
+def approximate_shapley(self, pn, bn, K=1000):
+```
+
+* **论文对应**：算法 2，PD-A：Permuted Data Shapley（Shapley 近似）
+
+>  原文：
+> “Sample K permutations of M, compute marginal gain of each feature in the permutation, average over K.”
+
+##### 实现细节：
+
+1. `perm = random.sample(...)`：随机打乱特征顺序，得到排列 `π`；
+2. 对于排列 `π` 中的每个特征 `m`，计算其边际增益；
+3. 累积后除以 `K` 得到近似 Shapley 值。
+
+> 对应论文中定理 5.3：该算法近似精度随 `K` 上升而收敛。
+
+---
+
+#### `allocate_revenue()` —— 收益归因与归一化分配
+
+```python
+def allocate_revenue(self, pn, bn, method='approximate', K=1000, total_revenue=1.0, enforce_non_negative=True):
+```
+
+* **论文对应**：第 3.3 节 Shapley Fairness 分配原理
+
+#### 功能解析：
+
+1. **调用 Shapley 分配方法**：
+
+   ```python
+   shapley_values = self.approximate_shapley(...)
+   ```
+
+2. **惩罚项（尚未启用）**：
+
+   ```python
+   penalty = self.lambda_penalty * 0  # 预留接口
+   ```
+   
+3. **非负性处理**：
+
+   ```python
+   if enforce_non_negative:
+       payouts = {i: max(v, 0.0) for i, v in payouts.items()}
+   ```
+
+   防止由于数值误差造成的负分配。
+
+4. **归一化为总收益**：
+
+   ```python
+   normalized_payouts = {i: (v / total) * total_revenue for i, v in payouts.items()}
+   ```
+
+   确保所有特征收益之和为指定总收入。
+
+---
+
+
 ## 五、实验结果与分析
 下面是一次运行结果（6个买家）
 ``` bash
