@@ -638,7 +638,59 @@ def gain_function(y_true, y_pred, task='regression'):
      $$
 4. 收敛时达到 regret 最小化
 
+```python
+def __init__(self, B_max: float, L: float, N: int, epsilon: Optional[float] = None):
+    self.B_max = B_max
+    self.L = L
+    self.N = N
+```
 
+初始化函数接收四个参数：B_max表示买家可能的最大估值，L是收益函数的Lipschitz常数，N是预期的买家总数，epsilon是可选的网格精度参数。这些参数共同决定了算法的学习能力和定价精度。
+
+#### 初始化
+
+```python
+if epsilon is None:
+    epsilon_value = 1 / (L * np.sqrt(N))
+else:
+    epsilon_value = epsilon
+self.epsilon = float(epsilon_value)
+
+self.candidates = np.arange(0, B_max + self.epsilon, self.epsilon)
+self.num_candidates = len(self.candidates)
+self.weights = np.ones(self.num_candidates)
+self.delta = np.sqrt(np.log(self.num_candidates) / N)
+```
+算法自动计算价格网格的精度epsilon，当用户未提供时，根据Lipschitz常数L和买家数量N自动确定。
+
+
+
+算法创建从0到B_max的价格候选网格，初始化所有候选价格的权重为1。学习率$\delta$根据候选价格数量和总买家数动态调整，这种设置保证了权重更新的稳定性。
+
+#### 价格选择
+
+```python
+def choose_price(self) -> float:
+    total_weight = np.sum(self.weights)
+    prob = self.weights / total_weight
+    chosen_idx = np.random.choice(self.num_candidates, p=prob)
+    return float(self.candidates[chosen_idx])
+```
+
+价格选择采用基于权重的随机采样策略。每个候选价格被选中的概率与其当前权重成正比，首先计算所有权重的总和，然后将每个权重转换为概率值，最后按这些概率随机选择一个价格。
+
+#### 权重更新
+
+```python
+def update_weights(self, chosen_price: float, b_n: float, Y: np.ndarray, 
+                  X: np.ndarray, revenue_func) -> None:
+    for i, c_i in enumerate(self.candidates):
+        RF_i = revenue_func(X, Y, c_i, b_n)
+        g_i = RF_i / self.B_max
+        self.weights[i] *= (1 + self.delta * g_i)
+```
+
+对于每个候选价格，计算其在该交易中的潜在收益$RF_i$，将其归一化为$g_i$后，按比例增加权重。表现越好的价格获得的权重增加越大，使算法能够收敛于高收益价格区域，实现收益最大化。
 
 
 ### (3) 收益分配(`revenue.py`)
